@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DropWave - Nano Banana</title>
+    <title>DropWave - Nano Banana +</title>
     
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     
     <style>
-        /* 無駄をすべて削ぎ落とした、シンプルかつクリーンなデザイン */
         body {
             font-family: -apple-system, sans-serif;
             background: #f8fafc;
@@ -33,7 +32,6 @@
         }
         h1 { font-size: 1.6rem; margin: 0 0 20px 0; letter-spacing: -0.5px; }
         
-        /* ⚠️ ローカル環境警告アラート */
         .alert {
             background: #fee2e2;
             color: #991b1b;
@@ -42,7 +40,7 @@
             margin-bottom: 20px;
             font-size: 0.85rem;
             line-height: 1.4;
-            display: none; /* 通常は非表示 */
+            display: none;
         }
 
         #qrcode {
@@ -85,17 +83,59 @@
             color: #64748b;
         }
 
-        /* ファイル選択エリア */
+        /* ファイル送信エリア */
         .file-zone {
-            border: 2px dashed #0284c7;
-            background: #f0f9ff;
-            padding: 30px 10px;
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+            padding: 20px 10px;
             border-radius: 12px;
             cursor: pointer;
-            color: #0369a1;
+            color: #64748b;
             font-size: 0.9rem;
             margin-top: 20px;
         }
+        .file-zone:hover { border-color: #0284c7; background: #f0f9ff; color: #0369a1; }
+
+        /* 🆕 テキスト送信エリア */
+        .text-zone {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            text-align: left;
+        }
+        .text-zone label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #64748b;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .text-btn { background: #0ea5e9; }
+        .text-btn:hover { background: #0284c7; }
+
+        /* 🆕 受信テキスト表示エリア */
+        .received-box {
+            display: none;
+            margin-top: 20px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        .received-title { font-size: 0.8rem; color: #475569; font-weight: bold; margin-bottom: 5px; }
+        .received-content { 
+            font-size: 0.95rem; 
+            white-space: pre-wrap; 
+            word-break: break-all; 
+            margin-bottom: 10px; 
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .copy-btn { background: #475569; font-size: 0.85rem; padding: 8px; }
+        .copy-btn:hover { background: #334155; }
     </style>
 </head>
 <body>
@@ -104,7 +144,7 @@
     <h1>DropWave</h1>
 
     <div class="alert" id="local-warning">
-        ⚠️ <b>注意:</b> 現在ローカルファイルとして開かれています。QRコードを正常に機能させるには、GitHub Pages（https://...）のURLにアクセスして使用してください。
+        ⚠️ <b>注意:</b> GitHub Pages（https://...）のURLにアクセスして使用してください。
     </div>
 
     <div>YOUR ID: <span id="my-id" style="font-weight: bold;">...</span></div>
@@ -116,34 +156,39 @@
 
     <div id="status">準備中...</div>
 
+    <div class="received-box" id="received-text-box">
+        <div class="received-title">📥 受信したテキスト / URL</div>
+        <div class="received-content" id="received-text"></div>
+        <button class="copy-btn" id="copy-btn">クリップボードにコピー</button>
+    </div>
+
+    <div class="text-zone">
+        <label for="text-to-send">テキストやURLを送信</label>
+        <input type="text" id="text-to-send" placeholder="ここにURLや文字を入力">
+        <button class="text-btn" id="send-text-btn">テキストを送信</button>
+    </div>
+
     <div class="file-zone" id="drop-zone">
-        ここをタップしてファイルを選択
+        または、ここをタップしてファイルを選択
         <input type="file" id="file-input" style="display: none;">
     </div>
 </div>
 
 <script>
-    // 1. 自分の4桁IDをランダム生成
     const myId = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('my-id').innerText = myId;
 
-    // 2. PeerJSの起動
     const peer = new Peer(myId);
     let conn = null;
 
     peer.on('open', (id) => {
-        // 現在開いているURLをチェック
         const currentUrl = window.location.href.split('?')[0];
-        
-        // もし file:// から始まっていたら警告を表示する
         if (window.location.protocol === 'file:') {
             document.getElementById('local-warning').style.display = 'block';
         }
 
-        // 🔗 確実に「現在のURL?connect=4桁数字」という形の完全なURLを組み立てる
         const connectUrl = `${currentUrl}?connect=${id}`;
 
-        // QRコードを生成（中身を完全なURLリンクにする）
         new QRCode(document.getElementById("qrcode"), {
             text: connectUrl,
             width: 140,
@@ -153,20 +198,15 @@
             correctLevel: QRCode.CorrectLevel.H
         });
 
-        // URLに相手のID（?connect=xxxx）が含まれているか確認
         checkUrlParam();
     });
 
-    // URLの「?connect=xxxx」を読み取って自動で繋ぐ関数
     function checkUrlParam() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('connect');
-        
         if (targetId) {
             document.getElementById('peer-id-input').value = targetId;
             document.getElementById('status').innerText = `QRコードを検知: ${targetId} に自動接続します...`;
-            
-            // 接続を少し待ってから実行（安定化のため）
             setTimeout(() => {
                 conn = peer.connect(targetId);
                 setupConnection();
@@ -176,13 +216,11 @@
         }
     }
 
-    // 相手から接続されたときのイベント
     peer.on('connection', (incomingConn) => {
         conn = incomingConn;
         setupConnection();
     });
 
-    // ボタン手動接続
     document.getElementById('connect-btn').addEventListener('click', () => {
         const peerId = document.getElementById('peer-id-input').value;
         if (peerId) {
@@ -192,35 +230,72 @@
         }
     });
 
-    // 接続完了後の処理
+    // 🔗 接続確立後のデータ処理
     function setupConnection() {
         conn.on('open', () => {
             document.getElementById('status').innerText = `接続完了！ 相手: ${conn.peer}`;
-            document.getElementById('status').style.color = '#16a34a'; // 緑色に
+            document.getElementById('status').style.color = '#16a34a';
             
-            // URLの後ろの「?connect=xxxx」を消して、ブラウザの見た目を元に戻す
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, '', cleanUrl);
         });
 
-        // ファイル受信
+        // 📥 データ受信時の仕分け処理
         conn.on('data', (data) => {
-            if (data.file) {
+            // ① テキストデータの場合
+            if (data.dataType === 'text') {
+                document.getElementById('status').innerText = 'テキストを受信しました！';
+                document.getElementById('received-text-box').style.display = 'block';
+                document.getElementById('received-text').innerText = data.content;
+            } 
+            // ② ファイルデータの場合
+            else if (data.dataType === 'file' || data.file) {
                 document.getElementById('status').innerText = 'ファイルを受信中...';
-                
                 const blob = new Blob([data.file], { type: data.type });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = data.name;
                 a.click();
-                
                 document.getElementById('status').innerText = `受信完了: ${data.name}`;
             }
         });
     }
 
-    // ファイル送信
+    // 📤 🆕 テキスト送信ボタンの処理
+    document.getElementById('send-text-btn').addEventListener('click', () => {
+        const textContent = document.getElementById('text-to-send').value;
+        if (!textContent) return;
+        if (!conn) {
+            alert('先に相手と接続してください');
+            return;
+        }
+
+        // 識別用の「dataType: 'text'」を付けて送信
+        conn.send({
+            dataType: 'text',
+            content: textContent
+        });
+
+        document.getElementById('status').innerText = 'テキストを送信しました';
+        document.getElementById('text-to-send').value = ''; // 入力欄をクリア
+    });
+
+    // 📋 🆕 コピーボタンの処理
+    document.getElementById('copy-btn').addEventListener('click', () => {
+        const textToCopy = document.getElementById('received-text').innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const copyBtn = document.getElementById('copy-btn');
+            copyBtn.innerText = 'コピーしました！';
+            copyBtn.style.background = '#16a34a';
+            setTimeout(() => {
+                copyBtn.innerText = 'クリップボードにコピー';
+                copyBtn.style.background = '#475569';
+            }, 2000);
+        });
+    });
+
+    // 📤 ファイル送信の処理
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
 
@@ -234,7 +309,9 @@
 
         document.getElementById('status').innerText = `送信中: ${file.name}`;
         
+        // 識別用の「dataType: 'file'」を付けて送信
         conn.send({
+            dataType: 'file',
             file: file,
             name: file.name,
             type: file.type
