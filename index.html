@@ -3,247 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DropWave - Beyond AirDrop</title>
+    <title>DropWave - Nano Banana</title>
     
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #38bdf8;
-            --text-color: #f8fafc;
-            --success-color: #4ade80;
-        }
+        /* 無駄をすべて削ぎ落とした、シンプルかつクリーンなデザイン */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
             margin: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
-        .container {
-            width: 90%;
-            max-width: 420px;
-            background: var(--card-bg);
-            padding: 2.5rem 2rem;
-            border-radius: 32px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        .box {
+            width: 100%;
+            max-width: 380px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             text-align: center;
+            box-sizing: border-box;
         }
-        h1 { font-size: 2.2rem; margin: 0 0 0.25rem 0; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-        .subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 2rem; letter-spacing: 1px; }
-
-        /* QRコード・ID表示エリア */
-        .id-panel {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid #334155;
-            padding: 1.5rem;
-            border-radius: 24px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        h1 { font-size: 1.6rem; margin: 0 0 20px 0; letter-spacing: -0.5px; }
+        
+        /* ⚠️ ローカル環境警告アラート */
+        .alert {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: none; /* 通常は非表示 */
         }
-        .my-id-text { font-size: 1.1rem; color: #fff; margin-bottom: 1rem; font-family: monospace; font-weight: bold; }
-        #qrcode { margin-bottom: 0.75rem; padding: 12px; background: #fff; border-radius: 16px; }
-        .scan-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; letter-spacing: 1px; }
 
-        /* 入力フォーム・ボタン */
+        #qrcode {
+            margin: 20px auto;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
         input[type="text"] {
             width: 100%;
-            padding: 0.85rem;
-            border-radius: 14px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
             box-sizing: border-box;
-            margin-bottom: 0.75rem;
+            margin-bottom: 10px;
             font-size: 1rem;
             text-align: center;
         }
-        input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
         
-        .btn {
+        button {
             width: 100%;
-            padding: 0.85rem;
-            border-radius: 14px;
+            padding: 12px;
+            border-radius: 8px;
             border: none;
-            background: var(--accent-color);
-            color: #0f172a;
+            background: #0284c7;
+            color: white;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        .btn:hover { background: #7dd3fc; }
+        button:hover { background: #0369a1; }
 
-        #status { margin-top: 1.5rem; font-size: 0.9rem; color: #94a3b8; min-height: 1.2rem; }
-        #status.success { color: var(--success-color); font-weight: bold; }
-
-        /* 送信エリア */
-        .drop-zone-container { margin-top: 1.5rem; position: relative; }
-        .drop-zone {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            margin: 0 auto;
-            border: 3px dashed #475569;
-            background: rgba(56, 189, 248, 0.03);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
+        #status {
+            margin: 20px 0;
+            font-size: 0.9rem;
+            font-weight: bold;
             color: #64748b;
-            transition: all 0.3s;
-        }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent-color);
-            background: rgba(56, 189, 248, 0.1);
-            color: var(--accent-color);
-            border-style: solid;
         }
 
-        /* アニメーション用アイコン */
-        .transferring-file {
-            position: absolute;
-            bottom: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 44px;
-            height: 44px;
+        /* ファイル選択エリア */
+        .file-zone {
+            border: 2px dashed #0284c7;
+            background: #f0f9ff;
+            padding: 30px 10px;
             border-radius: 12px;
-            background: var(--card-bg);
-            border: 2px solid var(--accent-color);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
-        }
-        .transferring-file.active { display: flex; animation: file-flow 2s linear infinite; }
-
-        @keyframes file-flow {
-            0% { bottom: -40px; opacity: 0; transform: translateX(-50%) scale(0.6); }
-            20% { opacity: 1; transform: translateX(-50%) scale(1); }
-            80% { opacity: 1; transform: translateX(-50%) scale(1); }
-            100% { bottom: 160px; opacity: 0; transform: translateX(-50%) scale(0.7); }
+            cursor: pointer;
+            color: #0369a1;
+            font-size: 0.9rem;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="box">
     <h1>DropWave</h1>
-    <div class="subtitle">SIMPLE • CROSS-OS • INSTANT</div>
 
-    <div class="id-panel">
-        <div class="my-id-text">YOUR ID: <span id="my-id">...</span></div>
-        <div id="qrcode"></div>
-        <div class="scan-label">SCAN TO CONNECT</div>
+    <div class="alert" id="local-warning">
+        ⚠️ <b>注意:</b> 現在ローカルファイルとして開かれています。QRコードを正常に機能させるには、GitHub Pages（https://...）のURLにアクセスして使用してください。
     </div>
 
-    <input type="text" id="peer-id-input" placeholder="Enter ID or Scan QR">
-    <button class="btn" id="connect-btn">CONNECT</button>
+    <div>YOUR ID: <span id="my-id" style="font-weight: bold;">...</span></div>
+    
+    <div id="qrcode"></div>
+    
+    <input type="text" id="peer-id-input" placeholder="相手のIDを手動入力">
+    <button id="connect-btn">接続する</button>
 
-    <div id="status">Ready...</div>
+    <div id="status">準備中...</div>
 
-    <div class="drop-zone-container">
-        <div class="drop-zone" id="drop-zone">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
-            <input type="file" id="file-input" style="display: none;">
-        </div>
-        <div class="transferring-file" id="file-animation-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-color);"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </div>
+    <div class="file-zone" id="drop-zone">
+        ここをタップしてファイルを選択
+        <input type="file" id="file-input" style="display: none;">
     </div>
 </div>
 
 <script>
-    // 1. PeerJS の初期化と自分のID（4桁）の生成
+    // 1. 自分の4桁IDをランダム生成
     const myId = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('my-id').innerText = myId;
+
+    // 2. PeerJSの起動
     const peer = new Peer(myId);
     let conn = null;
 
     peer.on('open', (id) => {
-        // 【自動化】今ブラウザで開いているURLを100%正確に自動取得（末尾の?以降はカット）
-        const currentUrl = window.location.origin + window.location.pathname;
+        // 現在開いているURLをチェック
+        const currentUrl = window.location.href.split('?')[0];
         
-        // 相手がアクセスするための「自動接続URL」を組み立てる
+        // もし file:// から始まっていたら警告を表示する
+        if (window.location.protocol === 'file:') {
+            document.getElementById('local-warning').style.display = 'block';
+        }
+
+        // 🔗 確実に「現在のURL?connect=4桁数字」という形の完全なURLを組み立てる
         const connectUrl = `${currentUrl}?connect=${id}`;
 
-        // 2. 正しいURL情報を埋め込んでQRコードを生成
-        // 💡これでスマホでスキャンした時、文字ではなく「Webサイトへのリンク」として認識されます
+        // QRコードを生成（中身を完全なURLリンクにする）
         new QRCode(document.getElementById("qrcode"), {
             text: connectUrl,
-            width: 128,
-            height: 128,
+            width: 140,
+            height: 140,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
-        
-        // ページを開いたときに、URLに「相手のID」が含まれているかチェックする
+
+        // URLに相手のID（?connect=xxxx）が含まれているか確認
         checkUrlParam();
     });
 
-    // URLパラメータを解析して、自動で接続を試みる関数
+    // URLの「?connect=xxxx」を読み取って自動で繋ぐ関数
     function checkUrlParam() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('connect');
         
         if (targetId) {
             document.getElementById('peer-id-input').value = targetId;
-            updateStatus(`QRコードを検知。ID: ${targetId} に自動接続中...`);
+            document.getElementById('status').innerText = `QRコードを検知: ${targetId} に自動接続します...`;
             
-            // PeerJSの準備が確実に整うまで、わずかに待ってから接続を実行
+            // 接続を少し待ってから実行（安定化のため）
             setTimeout(() => {
                 conn = peer.connect(targetId);
                 setupConnection();
-            }, 800);
+            }, 1000);
         } else {
-            updateStatus('接続を待つか、相手のQRコードをスキャンしてください');
+            document.getElementById('status').innerText = '接続を待つか、QRコードをスキャンしてください';
         }
     }
 
-    // ── 通信のイベント処理 ──
-
-    // 相手から接続を求められたとき
+    // 相手から接続されたときのイベント
     peer.on('connection', (incomingConn) => {
         conn = incomingConn;
         setupConnection();
     });
 
-    // CONNECT ボタンを手動で押したとき
+    // ボタン手動接続
     document.getElementById('connect-btn').addEventListener('click', () => {
         const peerId = document.getElementById('peer-id-input').value;
         if (peerId) {
-            updateStatus(`${peerId} に接続中...`);
+            document.getElementById('status').innerText = `${peerId} に接続中...`;
             conn = peer.connect(peerId);
             setupConnection();
         }
     });
 
-    // 接続が完全に確立した後の処理
+    // 接続完了後の処理
     function setupConnection() {
         conn.on('open', () => {
-            updateStatus(`CONNECTED: ${conn.peer}`, 'success');
+            document.getElementById('status').innerText = `接続完了！ 相手: ${conn.peer}`;
+            document.getElementById('status').style.color = '#16a34a'; // 緑色に
             
-            // 接続完了後、URLの後ろについた「?connect=xxxx」を綺麗に消去（ブラウザの見た目スッキリ化）
+            // URLの後ろの「?connect=xxxx」を消して、ブラウザの見た目を元に戻す
             const cleanUrl = window.location.origin + window.location.pathname;
-            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+            window.history.replaceState({}, '', cleanUrl);
         });
 
-        // 相手からファイルデータが送られてきたとき
+        // ファイル受信
         conn.on('data', (data) => {
             if (data.file) {
-                startTransferAnimation('receiving');
+                document.getElementById('status').innerText = 'ファイルを受信中...';
                 
-                // 届いたバイナリデータをファイルに戻して自動ダウンロード
                 const blob = new Blob([data.file], { type: data.type });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -251,66 +215,33 @@
                 a.download = data.name;
                 a.click();
                 
-                updateStatus(`RECEIVED: ${data.name}`, 'success');
-                setTimeout(stopTransferAnimation, 2000);
+                document.getElementById('status').innerText = `受信完了: ${data.name}`;
             }
         });
     }
 
-    // ── ファイルの送信管理 ──
+    // ファイル送信
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
-    const animationIcon = document.getElementById('file-animation-icon');
 
     dropZone.addEventListener('click', () => fileInput.click());
-
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
-
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-    function handleFiles(files) {
-        if (files.length === 0 || !conn) {
-            if (!conn) alert('先に相手と通信を接続してください');
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file || !conn) {
+            if (!conn) alert('先に相手と接続してください');
             return;
         }
 
-        const file = files[0];
-        updateStatus(`SENDING: ${file.name}...`);
-        startTransferAnimation('sending');
-
-        // データを送信
+        document.getElementById('status').innerText = `送信中: ${file.name}`;
+        
         conn.send({
             file: file,
             name: file.name,
             type: file.type
         });
 
-        setTimeout(() => {
-            updateStatus(`SENT: ${file.name}`, 'success');
-            stopTransferAnimation();
-        }, 2000);
-    }
-
-    // アニメーション制御
-    function startTransferAnimation(type) {
-        animationIcon.classList.add('active');
-        animationIcon.style.animationDirection = (type === 'receiving') ? 'reverse' : 'normal';
-    }
-    function stopTransferAnimation() {
-        animationIcon.classList.remove('active');
-    }
-
-    function updateStatus(text, type = '') {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = text;
-        statusEl.className = type;
-    }
+        document.getElementById('status').innerText = `送信完了: ${file.name}`;
+    });
 </script>
 
 </body>
