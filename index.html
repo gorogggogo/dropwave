@@ -137,28 +137,43 @@
         .copy-btn { background: #475569; font-size: 0.85rem; padding: 8px; }
         .copy-btn:hover { background: #334155; }
 
-        /* 🔴 PayPay寄付エリア */
+        /* 🔴 PayPay ID表示エリア */
         .sponsor-zone {
             margin-top: 25px;
             border-top: 1px dashed #cbd5e1;
             padding-top: 20px;
         }
-        .paypay-btn {
-            background: #ff0033; /* PayPayレッド */
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            box-sizing: border-box;
-            transition: background 0.2s;
+        .paypay-card {
+            background: #fff0f2;
+            border: 1px solid #ffcbd5;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
         }
-        .paypay-btn:hover { background: #d6002b; }
+        .paypay-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ff0033;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .paypay-desc {
+            font-size: 0.75rem;
+            color: #475569;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .paypay-id-box {
+            background: white;
+            border: 1px dashed #ff0033;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-align: center;
+            color: #0f172a;
+        }
     </style>
 </head>
 <body>
@@ -197,9 +212,11 @@
     </div>
 
     <div class="sponsor-zone">
-        <a href="https://qr.paypay.ne.jp/p2p01_8Tux8VBNZyVb2vUk" target="_blank" class="paypay-btn">
-            📱 PayPayで開発者を応援する
-        </a>
+        <div class="paypay-card">
+            <div class="paypay-title">📱 PayPayで開発者を応援</div>
+            <div class="paypay-desc">アプリの「送金」から、以下のIDを検索して応援していただけると励みになります！</div>
+            <div class="paypay-id-box">08301 - e98016 - 6ec00</div>
+        </div>
     </div>
 </div>
 
