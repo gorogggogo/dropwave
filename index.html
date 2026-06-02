@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DropWave - Beyond AirDrop (v2)</title>
+    <title>DropWave - Beyond AirDrop</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
@@ -23,11 +23,11 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         .container {
             width: 90%;
-            max-width: 480px;
+            max-width: 450px;
             background: var(--card-bg);
             padding: 2rem;
             border-radius: 32px;
@@ -36,43 +36,44 @@
             position: relative;
         }
         .logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
-        .logo-icon { width: 32px; height: 32px; margin-right: 0.75rem; color: var(--accent-color); animation: ripple 2s infinite; }
-        h1 { font-size: 2rem; margin: 0; font-weight: 700; color: #fff; }
-        .subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2.5rem; }
+        .logo-icon { width: 32px; height: 32px; margin-right: 0.75rem; color: var(--accent-color); }
+        h1 { font-size: 2rem; margin: 0; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+        .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
 
-        /* QRコードセクション */
+        /* QRコード・ID表示エリア */
         .id-panel {
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.4);
             border: 1px solid #334155;
             padding: 1.5rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
+            border-radius: 24px;
+            margin-bottom: 1.5rem;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .my-id-text { font-size: 1.1rem; color: #fff; margin-bottom: 1rem; font-family: monospace; }
-        #qrcode { margin-bottom: 0.75rem; padding: 10px; background: #fff; border-radius: 12px; }
+        .my-id-text { font-size: 1.1rem; color: #fff; margin-bottom: 1rem; font-family: monospace; font-weight: bold; }
+        #qrcode { margin-bottom: 0.75rem; padding: 12px; background: #fff; border-radius: 16px; display: inline-block; }
         #qrcode img { display: block; }
-        .scan-label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .scan-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
 
         input[type="text"] {
             width: 100%;
-            padding: 0.9rem;
+            padding: 0.85rem;
             border-radius: 14px;
             border: 1px solid #334155;
             background: #0f172a;
             color: #fff;
             box-sizing: border-box;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             font-size: 1rem;
+            text-align: center;
             transition: border-color 0.2s;
         }
         input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
 
         .btn {
             width: 100%;
-            padding: 0.9rem;
+            padding: 0.85rem;
             border-radius: 14px;
             border: none;
             background: var(--accent-color);
@@ -85,92 +86,87 @@
         .btn:hover { background: #7dd3fc; }
         .btn:active { transform: scale(0.98); }
 
-        /* リッチな DropZone */
+        #status {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        #status.success { color: var(--success-color); font-weight: bold; }
+
+        /* リッチなウェーブDropZone */
         .drop-zone-container {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             position: relative;
         }
         .drop-zone {
-            width: 180px;
-            height: 180px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             margin: 0 auto;
-            border: 4px solid transparent;
-            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+            border: 3px solid transparent;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            color: #94a3b8;
-            transition: border-color 0.3s, background 0.3s;
+            color: #64748b;
+            transition: border-color 0.3s, background 0.3s, color 0.3s;
             position: relative;
             overflow: hidden;
-            animation: pulse-bg 3s infinite;
         }
         .drop-zone:hover, .drop-zone.dragover {
             border-color: var(--accent-color);
             background: radial-gradient(circle at center, rgba(56, 189, 248, 0.25) 0%, transparent 80%);
+            color: var(--accent-color);
         }
         .drop-zone-icon {
-            font-size: 2rem;
             position: relative;
             z-index: 2;
+            transition: transform 0.2s;
         }
-        /* DropZone のエネルギーウェーブアニメーション */
+        .drop-zone:hover .drop-zone-icon {
+            transform: translateY(-2px);
+        }
+        /* 回転するエネルギー波の効果 */
         .drop-zone::after {
             content: '';
             position: absolute;
             width: 100%;
             height: 100%;
-            background: repeating-conic-gradient(from 0deg, transparent 0deg 20deg, rgba(56, 189, 248, 0.1) 20deg 40deg);
-            animation: rotate-wave 10s linear infinite;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(56, 189, 248, 0.05) 30deg 60deg);
+            animation: rotate-wave 12s linear infinite;
             z-index: 1;
         }
 
-        #status {
-            margin-top: 1.5rem;
-            font-size: 0.95rem;
-            min-height: 1.2rem;
-            color: #fff;
-        }
-        #status.success { color: var(--success-color); }
-
-        /* 転送中のアニメーション */
+        /* 転送中のファイル流動アニメーション */
         .transferring-file {
             position: absolute;
-            bottom: -50px;
+            bottom: -40px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
             background: var(--card-bg);
             border: 2px solid var(--accent-color);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 10;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
-        .transferring-file.active { display: flex; animation: file-flow 2s linear infinite; }
+        .transferring-file.active { display: flex; animation: file-flow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
-        /* アニメーション定義 */
-        @keyframes ripple {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
-        @keyframes pulse-bg {
-            0%, 100% { background-color: transparent; }
-            50% { background-color: rgba(56, 189, 248, 0.05); }
-        }
         @keyframes rotate-wave {
             to { transform: rotate(360deg); }
         }
         @keyframes file-flow {
-            0% { bottom: -50px; opacity: 0; transform: translateX(-50%) scale(0.5); }
-            10% { opacity: 1; transform: translateX(-50%) scale(1); }
-            90% { opacity: 1; transform: translateX(-50%) scale(1); }
-            100% { bottom: 200px; opacity: 0; transform: translateX(-50%) scale(0.8); }
+            0% { bottom: -40px; opacity: 0; transform: translateX(-50%) scale(0.6); }
+            20% { opacity: 1; transform: translateX(-50%) scale(1); }
+            80% { opacity: 1; transform: translateX(-50%) scale(1); }
+            100% { bottom: 180px; opacity: 0; transform: translateX(-50%) scale(0.7); }
         }
     </style>
 </head>
@@ -178,7 +174,6 @@
 
 <div class="container">
     <div class="logo-area">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         <h1>DropWave</h1>
     </div>
     <div class="subtitle">SIMPLE. CROSS-OS. INSTANT.</div>
@@ -189,88 +184,119 @@
         <div class="scan-label">SCAN TO CONNECT</div>
     </div>
 
-    <input type="text" id="peer-id-input" placeholder="Enter Peer ID or scan QR">
+    <input type="text" id="peer-id-input" placeholder="Enter ID or Scan QR">
     <button class="btn" id="connect-btn">CONNECT</button>
 
-    <div id="status">Ready to connect...</div>
+    <div id="status">Initializing...</div>
 
     <div class="drop-zone-container">
         <div class="drop-zone" id="drop-zone">
             <div class="drop-zone-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
             </div>
-            <input type="file" id="file-input" style="display: none;" multiple>
+            <input type="file" id="file-input" style="display: none;">
         </div>
         <div class="transferring-file" id="file-animation-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-color);"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. PeerJS の初期化 (ID生成)
+    // 1. PeerJS 初期化とID生成
     const myId = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('my-id').innerText = myId;
     const peer = new Peer(myId);
     let conn = null;
 
     peer.on('open', (id) => {
-        // 2. QRコードの生成 (IDが確定してから)
+        // 現在のURL（パラメータを除くベース）を取得し、接続用URLを作る
+        const baseUrl = window.location.href.split('?')[0];
+        const connectUrl = `${baseUrl}?connect=${id}`;
+
+        // 2. URLを埋め込んだQRコードを生成
         new QRCode(document.getElementById("qrcode"), {
-            text: id,
+            text: connectUrl,
             width: 128,
             height: 128,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
-        updateStatus('Waiting for connection or ID input...');
+        
+        // ページ読み込み時にURLパラメータにIDがあるかチェック
+        checkUrlParam();
     });
 
+    // パラメータチェック＆自動接続関数
+    function checkUrlParam() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('connect');
+        
+        if (targetId) {
+            document.getElementById('peer-id-input').value = targetId;
+            updateStatus(`QRスキャン検知: ${targetId} に自動接続中...`);
+            
+            setTimeout(() => {
+                conn = peer.connect(targetId);
+                setupConnection();
+            }, 600);
+        } else {
+            updateStatus('接続を待つか、QRをスキャンしてください');
+        }
+    }
+
+    // 相手から接続されたとき
     peer.on('connection', (incomingConn) => {
         conn = incomingConn;
         setupConnection();
     });
 
+    // ボタンを押して手動接続するとき
     document.getElementById('connect-btn').addEventListener('click', () => {
         const peerId = document.getElementById('peer-id-input').value;
         if (peerId) {
-            updateStatus(`Connecting to ${peerId}...`);
+            updateStatus(`${peerId} に接続中...`);
             conn = peer.connect(peerId);
             setupConnection();
         }
     });
 
+    // 接続成立後の処理
     function setupConnection() {
         conn.on('open', () => {
-            updateStatus(`CONNECTED TO: ${conn.peer}`, 'success');
-            // 接続に成功したら入力エリアやQRコードを少し暗くするなどUIを調整しても良い
+            updateStatus(`CONNECTED: ${conn.peer}`, 'success');
+            
+            // URLの「?connect=xxxx」を消して見た目を綺麗にする
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         });
 
+        // データ受信時
         conn.on('data', (data) => {
             if (data.file) {
-                // 受信アニメーションを開始
                 startTransferAnimation('receiving');
+                
                 const blob = new Blob([data.file], { type: data.type });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = data.name;
                 a.click();
-                updateStatus(`RECEIVED: ${data.name} (${data.type})`, 'success');
-                setTimeout(stopTransferAnimation, 2500); // 2.5秒後にアニメーション停止
+                
+                updateStatus(`RECEIVED: ${data.name}`, 'success');
+                setTimeout(stopTransferAnimation, 2000);
             }
         });
     }
 
-    // ファイル送信の処理
+    // ファイル送信管理
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const animationIcon = document.getElementById('file-animation-icon');
 
     dropZone.addEventListener('click', () => fileInput.click());
 
-    // ドラッグ＆ドロップの視覚効果
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('dragover');
@@ -286,14 +312,12 @@
 
     function handleFiles(files) {
         if (files.length === 0 || !conn) {
-            if (!conn) alert('Please connect to a peer first!');
+            if (!conn) alert('先に相手と通信を接続してください！');
             return;
         }
 
         const file = files[0];
         updateStatus(`SENDING: ${file.name}...`);
-        
-        // 送信アニメーションを開始
         startTransferAnimation('sending');
 
         conn.send({
@@ -302,20 +326,19 @@
             type: file.type
         });
 
-        // 送信完了。 PeerJSは完了イベントが直接取れないため、少し待ってステータスを更新
         setTimeout(() => {
             updateStatus(`SENT: ${file.name}`, 'success');
             stopTransferAnimation();
         }, 2000);
     }
 
-    // アニメーション制御関数
+    // アニメーション制御
     function startTransferAnimation(type) {
         animationIcon.classList.add('active');
         if (type === 'receiving') {
-            animationIcon.style.animationDirection = 'reverse'; // 受信時は逆向き
+            animationIcon.style.animationDirection = 'reverse'; // 受信は上から下へ
         } else {
-            animationIcon.style.animationDirection = 'normal';
+            animationIcon.style.animationDirection = 'normal';   // 送信は下から上へ
         }
     }
     function stopTransferAnimation() {
