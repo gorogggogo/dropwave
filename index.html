@@ -35,8 +35,6 @@
             text-align: center;
             position: relative;
         }
-        .logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
-        .logo-icon { width: 32px; height: 32px; margin-right: 0.75rem; color: var(--accent-color); }
         h1 { font-size: 2rem; margin: 0; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
         .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
 
@@ -95,7 +93,7 @@
         }
         #status.success { color: var(--success-color); font-weight: bold; }
 
-        /* リッチなウェーブDropZone */
+        /* ウェーブDropZone */
         .drop-zone-container {
             margin-top: 1.5rem;
             position: relative;
@@ -121,15 +119,8 @@
             background: radial-gradient(circle at center, rgba(56, 189, 248, 0.25) 0%, transparent 80%);
             color: var(--accent-color);
         }
-        .drop-zone-icon {
-            position: relative;
-            z-index: 2;
-            transition: transform 0.2s;
-        }
-        .drop-zone:hover .drop-zone-icon {
-            transform: translateY(-2px);
-        }
-        /* 回転するエネルギー波の効果 */
+        .drop-zone-icon { position: relative; z-index: 2; transition: transform 0.2s; }
+        .drop-zone:hover .drop-zone-icon { transform: translateY(-2px); }
         .drop-zone::after {
             content: '';
             position: absolute;
@@ -140,7 +131,7 @@
             z-index: 1;
         }
 
-        /* 転送中のファイル流動アニメーション */
+        /* アニメーション用アイコン */
         .transferring-file {
             position: absolute;
             bottom: -40px;
@@ -159,9 +150,7 @@
         }
         .transferring-file.active { display: flex; animation: file-flow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
-        @keyframes rotate-wave {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes rotate-wave { to { transform: rotate(360deg); } }
         @keyframes file-flow {
             0% { bottom: -40px; opacity: 0; transform: translateX(-50%) scale(0.6); }
             20% { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -203,18 +192,21 @@
 </div>
 
 <script>
-    // 1. PeerJS 初期化とID生成
+    // ⚠️【超重要設定】あなたのGitHubユーザー名をここに入力してください
+    const GITHUB_USERNAME = "gorogggogo"; 
+    const REPOSITORY_NAME = "dropwave";
+
+    // 1. PeerJS 初期化
     const myId = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('my-id').innerText = myId;
     const peer = new Peer(myId);
     let conn = null;
 
     peer.on('open', (id) => {
-        // 現在のURL（パラメータを除くベース）を取得し、接続用URLを作る
-        const baseUrl = window.location.href.split('?')[0];
-        const connectUrl = `${baseUrl}?connect=${id}`;
+        // あなたのGitHub Pagesの絶対URLを直接組み立てる
+        const connectUrl = `https://${GITHUB_USERNAME}.github.io/${REPOSITORY_NAME}/?connect=${id}`;
 
-        // 2. URLを埋め込んだQRコードを生成
+        // 2. 正しいURLでQRコードを生成
         new QRCode(document.getElementById("qrcode"), {
             text: connectUrl,
             width: 128,
@@ -224,18 +216,16 @@
             correctLevel: QRCode.CorrectLevel.H
         });
         
-        // ページ読み込み時にURLパラメータにIDがあるかチェック
         checkUrlParam();
     });
 
-    // パラメータチェック＆自動接続関数
     function checkUrlParam() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('connect');
         
         if (targetId) {
             document.getElementById('peer-id-input').value = targetId;
-            updateStatus(`QRスキャン検知: ${targetId} に自動接続中...`);
+            updateStatus(`QR検出：${targetId} に自動接続中...`);
             
             setTimeout(() => {
                 conn = peer.connect(targetId);
@@ -246,13 +236,11 @@
         }
     }
 
-    // 相手から接続されたとき
     peer.on('connection', (incomingConn) => {
         conn = incomingConn;
         setupConnection();
     });
 
-    // ボタンを押して手動接続するとき
     document.getElementById('connect-btn').addEventListener('click', () => {
         const peerId = document.getElementById('peer-id-input').value;
         if (peerId) {
@@ -262,45 +250,35 @@
         }
     });
 
-    // 接続成立後の処理
     function setupConnection() {
         conn.on('open', () => {
             updateStatus(`CONNECTED: ${conn.peer}`, 'success');
-            
-            // URLの「?connect=xxxx」を消して見た目を綺麗にする
+            // URLの見栄えを綺麗にする
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         });
 
-        // データ受信時
         conn.on('data', (data) => {
             if (data.file) {
                 startTransferAnimation('receiving');
-                
                 const blob = new Blob([data.file], { type: data.type });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = data.name;
                 a.click();
-                
                 updateStatus(`RECEIVED: ${data.name}`, 'success');
                 setTimeout(stopTransferAnimation, 2000);
             }
         });
     }
 
-    // ファイル送信管理
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const animationIcon = document.getElementById('file-animation-icon');
 
     dropZone.addEventListener('click', () => fileInput.click());
-
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
@@ -312,19 +290,14 @@
 
     function handleFiles(files) {
         if (files.length === 0 || !conn) {
-            if (!conn) alert('先に相手と通信を接続してください！');
+            if (!conn) alert('先に相手と接続してください！');
             return;
         }
-
         const file = files[0];
         updateStatus(`SENDING: ${file.name}...`);
         startTransferAnimation('sending');
 
-        conn.send({
-            file: file,
-            name: file.name,
-            type: file.type
-        });
+        conn.send({ file: file, name: file.name, type: file.type });
 
         setTimeout(() => {
             updateStatus(`SENT: ${file.name}`, 'success');
@@ -332,25 +305,16 @@
         }, 2000);
     }
 
-    // アニメーション制御
     function startTransferAnimation(type) {
         animationIcon.classList.add('active');
-        if (type === 'receiving') {
-            animationIcon.style.animationDirection = 'reverse'; // 受信は上から下へ
-        } else {
-            animationIcon.style.animationDirection = 'normal';   // 送信は下から上へ
-        }
+        animationIcon.style.animationDirection = (type === 'receiving') ? 'reverse' : 'normal';
     }
-    function stopTransferAnimation() {
-        animationIcon.classList.remove('active');
-    }
-
+    function stopTransferAnimation() { animationIcon.classList.remove('active'); }
     function updateStatus(text, type = '') {
         const statusEl = document.getElementById('status');
         statusEl.innerText = text;
         statusEl.className = type;
     }
 </script>
-
 </body>
 </html>
