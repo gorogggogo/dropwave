@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DropWave - Beyond AirDrop</title>
+    
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
     <style>
         :root {
             --bg-color: #0f172a;
@@ -23,24 +25,22 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
         .container {
             width: 90%;
-            max-width: 450px;
+            max-width: 420px;
             background: var(--card-bg);
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             border-radius: 32px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             text-align: center;
-            position: relative;
         }
-        h1 { font-size: 2rem; margin: 0; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
-        .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
+        h1 { font-size: 2.2rem; margin: 0 0 0.25rem 0; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+        .subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 2rem; letter-spacing: 1px; }
 
         /* QRコード・ID表示エリア */
         .id-panel {
-            background: rgba(15, 23, 42, 0.4);
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid #334155;
             padding: 1.5rem;
             border-radius: 24px;
@@ -50,10 +50,10 @@
             align-items: center;
         }
         .my-id-text { font-size: 1.1rem; color: #fff; margin-bottom: 1rem; font-family: monospace; font-weight: bold; }
-        #qrcode { margin-bottom: 0.75rem; padding: 12px; background: #fff; border-radius: 16px; display: inline-block; }
-        #qrcode img { display: block; }
-        .scan-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
+        #qrcode { margin-bottom: 0.75rem; padding: 12px; background: #fff; border-radius: 16px; }
+        .scan-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; letter-spacing: 1px; }
 
+        /* 入力フォーム・ボタン */
         input[type="text"] {
             width: 100%;
             padding: 0.85rem;
@@ -65,10 +65,9 @@
             margin-bottom: 0.75rem;
             font-size: 1rem;
             text-align: center;
-            transition: border-color 0.2s;
         }
         input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
-
+        
         .btn {
             width: 100%;
             padding: 0.85rem;
@@ -79,56 +78,34 @@
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: background 0.2s;
         }
         .btn:hover { background: #7dd3fc; }
-        .btn:active { transform: scale(0.98); }
 
-        #status {
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            min-height: 1.2rem;
-            color: #94a3b8;
-            font-weight: 500;
-        }
+        #status { margin-top: 1.5rem; font-size: 0.9rem; color: #94a3b8; min-height: 1.2rem; }
         #status.success { color: var(--success-color); font-weight: bold; }
 
-        /* ウェーブDropZone */
-        .drop-zone-container {
-            margin-top: 1.5rem;
-            position: relative;
-        }
+        /* 送信エリア */
+        .drop-zone-container { margin-top: 1.5rem; position: relative; }
         .drop-zone {
-            width: 160px;
-            height: 160px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             margin: 0 auto;
-            border: 3px solid transparent;
-            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+            border: 3px dashed #475569;
+            background: rgba(56, 189, 248, 0.03);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             color: #64748b;
-            transition: border-color 0.3s, background 0.3s, color 0.3s;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s;
         }
         .drop-zone:hover, .drop-zone.dragover {
             border-color: var(--accent-color);
-            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.25) 0%, transparent 80%);
+            background: rgba(56, 189, 248, 0.1);
             color: var(--accent-color);
-        }
-        .drop-zone-icon { position: relative; z-index: 2; transition: transform 0.2s; }
-        .drop-zone:hover .drop-zone-icon { transform: translateY(-2px); }
-        .drop-zone::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(56, 189, 248, 0.05) 30deg 60deg);
-            animation: rotate-wave 12s linear infinite;
-            z-index: 1;
+            border-style: solid;
         }
 
         /* アニメーション用アイコン */
@@ -137,35 +114,31 @@
             bottom: -40px;
             left: 50%;
             transform: translateX(-50%);
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             background: var(--card-bg);
             border: 2px solid var(--accent-color);
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 10;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
         }
-        .transferring-file.active { display: flex; animation: file-flow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .transferring-file.active { display: flex; animation: file-flow 2s linear infinite; }
 
-        @keyframes rotate-wave { to { transform: rotate(360deg); } }
         @keyframes file-flow {
             0% { bottom: -40px; opacity: 0; transform: translateX(-50%) scale(0.6); }
             20% { opacity: 1; transform: translateX(-50%) scale(1); }
             80% { opacity: 1; transform: translateX(-50%) scale(1); }
-            100% { bottom: 180px; opacity: 0; transform: translateX(-50%) scale(0.7); }
+            100% { bottom: 160px; opacity: 0; transform: translateX(-50%) scale(0.7); }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="logo-area">
-        <h1>DropWave</h1>
-    </div>
-    <div class="subtitle">SIMPLE. CROSS-OS. INSTANT.</div>
+    <h1>DropWave</h1>
+    <div class="subtitle">SIMPLE • CROSS-OS • INSTANT</div>
 
     <div class="id-panel">
         <div class="my-id-text">YOUR ID: <span id="my-id">...</span></div>
@@ -176,37 +149,35 @@
     <input type="text" id="peer-id-input" placeholder="Enter ID or Scan QR">
     <button class="btn" id="connect-btn">CONNECT</button>
 
-    <div id="status">Initializing...</div>
+    <div id="status">Ready...</div>
 
     <div class="drop-zone-container">
         <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
-            </div>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/></svg>
             <input type="file" id="file-input" style="display: none;">
         </div>
         <div class="transferring-file" id="file-animation-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-color);"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-color);"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
     </div>
 </div>
 
 <script>
-    // ⚠️【超重要設定】あなたのGitHubユーザー名をここに入力してください
-    const GITHUB_USERNAME = "gorogggogo"; 
-    const REPOSITORY_NAME = "dropwave";
-
-    // 1. PeerJS 初期化
+    // 1. PeerJS の初期化と自分のID（4桁）の生成
     const myId = Math.floor(1000 + Math.random() * 9000).toString();
     document.getElementById('my-id').innerText = myId;
     const peer = new Peer(myId);
     let conn = null;
 
     peer.on('open', (id) => {
-        // あなたのGitHub Pagesの絶対URLを直接組み立てる
-        const connectUrl = `https://${GITHUB_USERNAME}.github.io/${REPOSITORY_NAME}/?connect=${id}`;
+        // 【自動化】今ブラウザで開いているURLを100%正確に自動取得（末尾の?以降はカット）
+        const currentUrl = window.location.origin + window.location.pathname;
+        
+        // 相手がアクセスするための「自動接続URL」を組み立てる
+        const connectUrl = `${currentUrl}?connect=${id}`;
 
-        // 2. 正しいURLでQRコードを生成
+        // 2. 正しいURL情報を埋め込んでQRコードを生成
+        // 💡これでスマホでスキャンした時、文字ではなく「Webサイトへのリンク」として認識されます
         new QRCode(document.getElementById("qrcode"), {
             text: connectUrl,
             width: 128,
@@ -216,31 +187,38 @@
             correctLevel: QRCode.CorrectLevel.H
         });
         
+        // ページを開いたときに、URLに「相手のID」が含まれているかチェックする
         checkUrlParam();
     });
 
+    // URLパラメータを解析して、自動で接続を試みる関数
     function checkUrlParam() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetId = urlParams.get('connect');
         
         if (targetId) {
             document.getElementById('peer-id-input').value = targetId;
-            updateStatus(`QR検出：${targetId} に自動接続中...`);
+            updateStatus(`QRコードを検知。ID: ${targetId} に自動接続中...`);
             
+            // PeerJSの準備が確実に整うまで、わずかに待ってから接続を実行
             setTimeout(() => {
                 conn = peer.connect(targetId);
                 setupConnection();
-            }, 600);
+            }, 800);
         } else {
-            updateStatus('接続を待つか、QRをスキャンしてください');
+            updateStatus('接続を待つか、相手のQRコードをスキャンしてください');
         }
     }
 
+    // ── 通信のイベント処理 ──
+
+    // 相手から接続を求められたとき
     peer.on('connection', (incomingConn) => {
         conn = incomingConn;
         setupConnection();
     });
 
+    // CONNECT ボタンを手動で押したとき
     document.getElementById('connect-btn').addEventListener('click', () => {
         const peerId = document.getElementById('peer-id-input').value;
         if (peerId) {
@@ -250,34 +228,42 @@
         }
     });
 
+    // 接続が完全に確立した後の処理
     function setupConnection() {
         conn.on('open', () => {
             updateStatus(`CONNECTED: ${conn.peer}`, 'success');
-            // URLの見栄えを綺麗にする
-            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            
+            // 接続完了後、URLの後ろについた「?connect=xxxx」を綺麗に消去（ブラウザの見た目スッキリ化）
+            const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({path: cleanUrl}, '', cleanUrl);
         });
 
+        // 相手からファイルデータが送られてきたとき
         conn.on('data', (data) => {
             if (data.file) {
                 startTransferAnimation('receiving');
+                
+                // 届いたバイナリデータをファイルに戻して自動ダウンロード
                 const blob = new Blob([data.file], { type: data.type });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = data.name;
                 a.click();
+                
                 updateStatus(`RECEIVED: ${data.name}`, 'success');
                 setTimeout(stopTransferAnimation, 2000);
             }
         });
     }
 
+    // ── ファイルの送信管理 ──
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const animationIcon = document.getElementById('file-animation-icon');
 
     dropZone.addEventListener('click', () => fileInput.click());
+
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
@@ -290,14 +276,20 @@
 
     function handleFiles(files) {
         if (files.length === 0 || !conn) {
-            if (!conn) alert('先に相手と接続してください！');
+            if (!conn) alert('先に相手と通信を接続してください');
             return;
         }
+
         const file = files[0];
         updateStatus(`SENDING: ${file.name}...`);
         startTransferAnimation('sending');
 
-        conn.send({ file: file, name: file.name, type: file.type });
+        // データを送信
+        conn.send({
+            file: file,
+            name: file.name,
+            type: file.type
+        });
 
         setTimeout(() => {
             updateStatus(`SENT: ${file.name}`, 'success');
@@ -305,16 +297,21 @@
         }, 2000);
     }
 
+    // アニメーション制御
     function startTransferAnimation(type) {
         animationIcon.classList.add('active');
         animationIcon.style.animationDirection = (type === 'receiving') ? 'reverse' : 'normal';
     }
-    function stopTransferAnimation() { animationIcon.classList.remove('active'); }
+    function stopTransferAnimation() {
+        animationIcon.classList.remove('active');
+    }
+
     function updateStatus(text, type = '') {
         const statusEl = document.getElementById('status');
         statusEl.innerText = text;
         statusEl.className = type;
     }
 </script>
+
 </body>
 </html>
